@@ -1,0 +1,7 @@
+bin/
+obj/
+cap/*
+!cap/conv.sh
+venv/
+cmake-build-debug/
+.idea/
