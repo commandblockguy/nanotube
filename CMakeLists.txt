@@ -298,7 +298,7 @@ add_executable(dummy
         src/lwIP/include/lwipopts.h
         src/lwIP/include/lwip/arch/cc.h
         src/lwIP/arch/time.c
-        src/lwIP/include/lwip/arch/time.h)
+        src/lwIP/include/lwip/arch/time.h src/queue.c src/queue.h src/nanotube.h)
 
 #add_executable(fs
 #        src/lwIP/apps/http/makefsdata/makefsdata.c

@@ -7,9 +7,12 @@
 
 #include <keypadc.h>
 #include <usbdrvce.h>
-#include <fontlibc.h>
 #include <fileioc.h>
+
+#ifdef GRAPHICS
 #include <graphx.h>
+#include <fontlibc.h>
+#endif
 
 #include "lwIP/include/lwip/init.h"
 #include "lwIP/include/lwip/netif.h"
@@ -18,6 +21,8 @@
 #include "lwIP/include/lwip/etharp.h"
 #include "lwIP/include/lwip/snmp.h"
 #include "lwIP/include/lwip/apps/httpd.h"
+#include "lwIP/include/lwip/arch/time.h"
+#include "queue.h"
 
 //temp globals
 usb_device_t dev;
@@ -27,16 +32,18 @@ uint24_t pnum;
 #define CONFIGURATION 2
 #define EP_IN 0x81
 #define EP_OUT 0x02
+//todo: undo
 #define ETHERNET_MTU 1500
 
 #define PACKET_CAPTURE 1
+#define PACKET_LOGS 0
 
 uint8_t mac_addr[6] = {0xA0, 0xCE, 0xC8, 0xE0, 0x0F, 0x35};
 
 uint8_t eth_data[ETHERNET_MTU + 18]; // verify this, lol
 uint8_t mac_send_buffer[ETHERNET_MTU + 18];
 
-struct pbuf *pb;
+queue_t queue = QUEUE_INITIALIZER;
 struct netif netif;
 
 char tmpstr[50];
@@ -46,8 +53,10 @@ usb_error_t eth_mac_irq(usb_endpoint_t pEndpoint, usb_transfer_status_t status, 
 void mainlog(char *str) {
 	ti_var_t logfile;
 	dbg_sprintf(dbgout, "%s\n", str);
+#ifdef GRAPHICS
 	fontlib_DrawString(str);
 	fontlib_DrawString("\n");
+#endif
 	logfile = ti_Open("ETHLOG", "a");
 	ti_Write(str, strlen(str), 1, logfile);
 	ti_PutC('\n', logfile);
@@ -59,9 +68,23 @@ void mainlog(char *str) {
 	ti_Close(logfile);
 }
 
+void delete_old_logs(void) {
+	char* filename = NULL;
+	void* pos = NULL;
+
+	while((filename = ti_Detect(&pos, ""))) {
+		if(filename[0] == 'P' && (filename[6] == 'T' || filename[6] == 'R') && filename[7] == 'X') {
+			dbg_sprintf(dbgout, "deleting %s\n", filename);
+			ti_Delete(filename);
+		} else {
+			dbg_sprintf(dbgout, "ignoring %s\n", filename);
+		}
+	}
+}
+
 void schedule_read(void) {
 	usb_ScheduleTransfer(in, eth_data, sizeof(eth_data), eth_mac_irq, NULL);
-	mainlog("scheduled read");
+//	mainlog("scheduled read");
 }
 
 static usb_error_t handle_usb_event(usb_event_t event, void *event_data,
@@ -69,7 +92,7 @@ static usb_error_t handle_usb_event(usb_event_t event, void *event_data,
 	if(event == USB_DEVICE_CONNECTED_EVENT) {
 		uint8_t buf[256];
 		size_t len;
-		usb_control_setup_t setup = {0x21, 0x43, 0x1e, 1, 0};
+		usb_control_setup_t setup = {0x21, 0x43, 0x1c, 1, 0};
 		usb_endpoint_t ep0;
 		usb_error_t err;
 
@@ -101,12 +124,18 @@ static usb_error_t handle_usb_event(usb_event_t event, void *event_data,
 		ep0 = usb_GetDeviceEndpoint(dev, 0);
 		dbg_sprintf(dbgout, "got endpoint 0: %p\n", ep0);
 
-		mainlog("got endpoints");
+		if(in && out && ep0)
+			mainlog("got endpoints");
+		else
+			mainlog("error: couldn't get endpoints");
 
 		if(!in || !out || !ep0) return USB_SUCCESS;
 
-		err = usb_ControlTransfer(ep0, &setup, NULL, 1, NULL);
-		if(err) dbg_sprintf(dbgout, "Error %u on filter set\n", err);
+		err = usb_ControlTransfer(ep0, &setup, NULL, 10, NULL);
+		if(err) {
+			sprintf(tmpstr, "Error %u on filter set\n", err);
+			mainlog(tmpstr);
+		}
 
 		mainlog("set filter");
 
@@ -125,32 +154,40 @@ usb_error_t eth_mac_irq(usb_endpoint_t pEndpoint, usb_transfer_status_t status, 
 	char filename[9];
 	ti_var_t slot;
 	struct pbuf *p;
-	p = pbuf_alloc(PBUF_RAW, size, PBUF_POOL);
-	if(p != NULL) {
+	uint16_t type = ((struct eth_hdr*)eth_data)->type;
+	/* Ignore IPv6 and ARRIS router broadcasts */
+	if(type != PP_HTONS(ETHTYPE_IPV6) && type != 0x9988) {
+		p = pbuf_alloc(PBUF_RAW, size, PBUF_POOL);
+		if(p != NULL) {
 
 #if PACKET_CAPTURE
-		sprintf(filename, "P%05uRX", pnum);
-		slot = ti_Open(filename, "w");
-		if(slot) {
-			ti_Write(eth_data, size, 1, slot);
-			ti_SetArchiveStatus(true, slot);
-			ti_Close(slot);
-		}
-		sprintf(tmpstr, "Read %u got %u bytes.", pnum, size);
-		mainlog(tmpstr);
+			sprintf(filename, "P%05uRX", pnum);
+			slot = ti_Open(filename, "w");
+			if(slot) {
+				ti_Write(eth_data, size, 1, slot);
+				ti_SetArchiveStatus(true, slot);
+				ti_Close(slot);
+			}
+#endif
+#if PACKET_LOGS
+			sprintf(tmpstr, "Read %u got %u bytes.", pnum, size);
+			mainlog(tmpstr);
 #endif
 
-		/* Copy ethernet frame into pbuf */
-		pbuf_take(p, eth_data, size);
-		//todo: fix
-		pb = p;
-		/* Put in a queue which is processed in main loop */
-		//if(!queue_try_put(&queue, p)) {
-		//    /* queue is full -> packet loss */
-		//    pbuf_free(p);
-		//}
-		pnum++;
+			/* Copy ethernet frame into pbuf */
+			pbuf_take(p, eth_data, size);
+
+			/* Put in a queue which is processed in main loop */
+			if(!queue_add(&queue, p)) {
+			    /* queue is full -> packet loss */
+			    mainlog("packet queue full - dropping");
+			    pbuf_free(p);
+			}
+			pnum++;
+		}
 	}
+
+	schedule_read();
 	return USB_SUCCESS;
 }
 
@@ -171,7 +208,7 @@ static err_t netif_output(struct netif *netif, struct pbuf *p) {
 
 	pbuf_copy_partial(p, mac_send_buffer, p->tot_len, 0);
 
-#ifdef PACKET_CAPTURE
+#if PACKET_CAPTURE
 	sprintf(filename, "P%05uTX", pnum);
 	slot = ti_Open(filename, "w");
 	if(slot) {
@@ -184,10 +221,13 @@ static err_t netif_output(struct netif *netif, struct pbuf *p) {
 	/* Start MAC transmit here */
 
 	usb_Transfer(out, mac_send_buffer, p->tot_len, 5, &transferred);
+#if PACKET_LOGS
 	sprintf(tmpstr, "Transmit %u sent %u bytes of %u", pnum, transferred, p->tot_len);
 	mainlog(tmpstr);
+#endif
 	pnum++;
 	if(transferred != p->tot_len) {
+		mainlog("failed to transmit all bytes");
 		//todo: error
 	}
 
@@ -209,22 +249,20 @@ static err_t netif_init_2(struct netif *netif) {
 
 void nt_process(void) {
 	/* Check for received frames, feed them to lwIP */
-	//todo: fix
-	struct pbuf *p = pb;// = queue_try_get(&queue);
-	pb = NULL;
+	struct pbuf *p = queue_get(&queue);
 	if(p != NULL) {
-		int unicast;
+//		int unicast;
 		mainlog("got a packet");
 		LINK_STATS_INC(link.recv);
 
-		/* Update SNMP stats (only if you use SNMP) */
-		MIB2_STATS_NETIF_ADD(netif, ifinoctets, p->tot_len);
-		unicast = ((((uint8_t *) p->payload)[0] & 0x01) == 0);
-		if(unicast) {
-			MIB2_STATS_NETIF_INC(netif, ifinucastpkts);
-		} else {
-			MIB2_STATS_NETIF_INC(netif, ifinnucastpkts);
-		}
+//		/* Update SNMP stats (only if you use SNMP) */
+//		MIB2_STATS_NETIF_ADD(netif, ifinoctets, p->tot_len);
+//		unicast = ((((uint8_t *) p->payload)[0] & 0x01) == 0);
+//		if(unicast) {
+//			MIB2_STATS_NETIF_INC(netif, ifinucastpkts);
+//		} else {
+//			MIB2_STATS_NETIF_INC(netif, ifinnucastpkts);
+//		}
 
 		if(netif.input(p, &netif) != ERR_OK) {
 			pbuf_free(p);
@@ -238,11 +276,15 @@ void nt_process(void) {
 
 void main(void) {
 	uint24_t error;
+#ifdef GRAPHICS
 	fontlib_font_t *font;
+#endif
 
 	ti_CloseAll();
+	delete_old_logs();
 	ti_Delete("ETHLOG");
 
+#ifdef GRAPHICS
 	gfx_Begin();
 	gfx_FillScreen(gfx_black);
 
@@ -258,6 +300,9 @@ void main(void) {
 	fontlib_SetBackgroundColor(gfx_black);
 	fontlib_SetForegroundColor(gfx_white);
 	fontlib_SetNewlineOptions(FONTLIB_ENABLE_AUTO_WRAP | FONTLIB_PRECLEAR_NEWLINE | FONTLIB_AUTO_SCROLL);
+#endif
+
+	timer_init();
 
 	mainlog("started");
 
@@ -270,6 +315,8 @@ void main(void) {
 		if(kb_IsDown(kb_KeyClear)) goto exit;
 		usb_HandleEvents();
 	}
+
+	mainlog("got device");
 
 	lwip_init();
 
@@ -302,6 +349,7 @@ void main(void) {
 
 	kb_Scan();
 	while(!kb_IsDown(kb_KeyClear)) {
+		kb_Scan();
 		nt_process();
 
 		/* your application goes here */
@@ -309,5 +357,9 @@ void main(void) {
 
 	exit:
 	usb_Cleanup();
+	ti_SetArchiveStatus(ti_Open("ETHLOG", "r"), true);
+	ti_CloseAll();
+#ifdef GRAPHICS
 	gfx_End();
+#endif
 }
