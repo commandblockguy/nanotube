@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <debug.h>
+#include <stdlib.h>
 
 //todo: remove
 void mainlog(const char *);

@@ -3,5 +3,7 @@ obj/
 cap/*
 !cap/conv.sh
 venv/
-cmake-build-debug/
+cmake-build-*
 .idea/
+log_setup/bin
+log_setup/obj

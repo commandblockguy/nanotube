@@ -1,4 +1,6 @@
 #include <string.h>
+#include <fileioc.h>
+#include <stdint.h>
 #include "tftp.h"
 
 #define SEPARATOR '.'

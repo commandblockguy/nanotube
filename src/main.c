@@ -85,10 +85,11 @@ void main(void) {
 	}
 	mainlog("got netif");
 
-	httpd_init();
-	mainlog("webserver initialized");
+	//httpd_init();
+	//mainlog("webserver initialized");
 
 	tftp_init(&tftpContext);
+	mainlog("tftp initialized");
 
 	echo_init();
 	mainlog("tcpecho initialized");

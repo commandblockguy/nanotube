@@ -48,7 +48,7 @@ usb_error_t ecm_read_callback(usb_endpoint_t pEndpoint, usb_transfer_status_t st
 usb_error_t ecm_write_callback(usb_endpoint_t pEndpoint, usb_transfer_status_t status, size_t size, void *pVoid) {
 	char tmpstr[50];
 	struct pbuf *p = pVoid;
-	mainlog("sent packet");
+	//mainlog("sent packet");
 	if(size != p->tot_len) {
 		sprintf(tmpstr, "Transfer sent %u bytes, expected %u (status: %u)", size, p->tot_len, status);
 		mainlog(tmpstr);
@@ -72,45 +72,11 @@ static err_t ecm_netif_output(struct netif *netif, struct pbuf *p) {
 //		MIB2_STATS_NETIF_INC(netif, ifoutnucastpkts);
 //	}
 
-	mainlog("ecm_netif_output called");
-	// start stuff
-//#warning you forgot to remove that thing
 	pbuf_ref(p);
 
     log_packet(p->payload, p->tot_len, false);
 
 	usb_ScheduleTransfer(state->out, p->payload, p->tot_len, ecm_write_callback, p);
-
-	// end stuff
-
-	/*
-	//todo: write directly from buffer
-	pbuf_copy_partial(p, mac_send_buffer, p->tot_len, 0);
-
-    mainlog("ding1");
-
-	log_packet(mac_send_buffer, p->tot_len, false);
-
-    mainlog("ding2");
-
-	usb_Transfer(state->out, mac_send_buffer, p->tot_len, 5, &transferred);
-
-    mainlog("ding3");
-
-
-#if PACKET_LOGS
-	sprintf(tmpstr, "Transmit sent %u bytes of %u", transferred, p->tot_len);
-	mainlog(tmpstr);
-#endif
-
-	if(transferred != p->tot_len) {
-		mainlog("failed to transmit all bytes");
-		//todo: error
-	}
-
-	 */
-
-	mainlog("netif_output complete");
 
 	return ERR_OK;
 }

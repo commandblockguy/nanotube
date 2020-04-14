@@ -5,7 +5,7 @@
 #define MEMP_MEM_MALLOC 1
 #define LWIP_PROVIDE_ERRNO 1
 #define NO_SYS 1
-#define LWIP_DHCP 1
+#define LWIP_DHCP 0
 #define LWIP_DNS 0
 #define LWIP_NETCONN 0
 #define LWIP_SOCKET 0

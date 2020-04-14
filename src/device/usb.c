@@ -3,6 +3,7 @@
 #include "../lwIP/include/lwip/netif.h"
 #include "../lwIP/include/lwip/dhcp.h"
 #include "ecm.h"
+#include <stdlib.h>
 #include <debug.h>
 
 //todo: remove
@@ -98,16 +99,16 @@ usb_error_t usb_handle_connect(usb_device_t dev) {
 
 	mainlog("interface set up");
 
-	//todo: uncomment
-
-//    /* Start DHCP */
-//    error = dhcp_start(netif_default);
-//    if(error) {
-//        char tmpstr[30];
-//        sprintf(tmpstr, "error in dhcp start: %u", error);
-//        mainlog(tmpstr);
-//    }
-//    mainlog("dhcp started");
+#if LWIP_DHCP
+    /* Start DHCP */
+    error = dhcp_start(netif_default);
+    if(error) {
+        char tmpstr[30];
+        sprintf(tmpstr, "error in dhcp start: %u", error);
+        mainlog(tmpstr);
+    }
+    mainlog("dhcp started");
+#endif
 
 	return USB_SUCCESS;
 }
