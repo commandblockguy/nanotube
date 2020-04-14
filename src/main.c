@@ -19,6 +19,7 @@
 #include "nanotube.h"
 #include "lwIP/include/lwip/apps/tftp_server.h"
 #include "tftp.h"
+#include "lwIP/apps/tcpecho_raw/echo.h"
 
 #define ETHERNET_MTU 1500
 
@@ -88,6 +89,9 @@ void main(void) {
 	mainlog("webserver initialized");
 
 	tftp_init(&tftpContext);
+
+	echo_init();
+	mainlog("tcpecho initialized");
 
 	/* Main loop */
 	do {

@@ -308,7 +308,7 @@ add_executable(dummy
         src/device/usb.c
         src/log.c
         src/log.h
-        src/nanotube.c src/tftp.c src/tftp.h)
+        src/nanotube.c src/tftp.c src/tftp.h src/lwIP/apps/tcpecho_raw/echo.c src/lwIP/apps/tcpecho_raw/echo.h)
 
 #add_executable(fs
 #        src/lwIP/apps/http/makefsdata/makefsdata.c
