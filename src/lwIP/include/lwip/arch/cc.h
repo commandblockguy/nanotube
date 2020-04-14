@@ -5,7 +5,7 @@
 #include <debug.h>
 
 //todo: remove
-void mainlog(char *);
+void mainlog(const char *);
 
 #define LWIP_HAVE_INT64 0
 #define LWIP_NO_INTTYPES_H 1

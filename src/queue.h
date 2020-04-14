@@ -19,6 +19,8 @@ bool queue_add(queue_t *queue, void *elem);
 /* Returns NULL if the queue was empty */
 void *queue_get(queue_t *queue);
 
+void queue_init(queue_t *queue);
+
 #define queue_empty(queue) ((queue)->last == -1)
 
 

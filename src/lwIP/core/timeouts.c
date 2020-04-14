@@ -380,6 +380,8 @@ sys_check_timeouts(void) {
 		current_timeout_due_time = tmptimeout->time;
 #if LWIP_DEBUG_TIMERNAMES
 		if (handler != NULL) {
+		    // I'd do this properly if ZDS supported variadic macros
+            mainlog(tmptimeout->handler_name);
 		  LWIP_DEBUGF(TIMERS_DEBUG, ("sct calling h=%s t=%"U32_F" arg=%p\n",
 									 tmptimeout->handler_name, sys_now() - tmptimeout->time, arg));
 		}

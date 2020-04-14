@@ -112,7 +112,7 @@ static netif_ext_callback_t *ext_callback;
 #if !LWIP_SINGLE_NETIF
 struct netif *netif_list;
 #endif /* !LWIP_SINGLE_NETIF */
-struct netif *netif_default;
+struct netif *netif_default = NULL;
 
 #define netif_index_to_num(index)   ((index) - 1)
 static u8_t netif_num;

@@ -9,5 +9,6 @@ void timer_init(void) {
 
 u32_t sys_now(void) {
 	/* I don't think this timer is too important */
+	//todo: make 32 bit, 1 ms
 	return timer_3_Counter >> 5;
 }

@@ -5,7 +5,7 @@ set(CMAKE_C_STANDARD 90)
 
 include_directories($ENV{CEDEV}/include)
 
-add_custom_target(Make ALL $(MAKE) debug WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+add_custom_target(Make ALL $(MAKE) WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 
 #dummy executable to make CLion quit complaining
 add_executable(dummy
@@ -62,7 +62,7 @@ add_executable(dummy
 #        src/lwIP/apps/snmp/snmpv3_mbedtls.c
 #        src/lwIP/apps/snmp/snmpv3_priv.h
 #        src/lwIP/apps/sntp/sntp.c
-#        src/lwIP/apps/tftp/tftp_server.c
+        src/lwIP/apps/tftp/tftp_server.c
         src/lwIP/core/ipv4/autoip.c
         src/lwIP/core/ipv4/dhcp.c
         src/lwIP/core/ipv4/etharp.c
@@ -134,8 +134,8 @@ add_executable(dummy
 #        src/lwIP/include/lwip/apps/snmpv3.h
 #        src/lwIP/include/lwip/apps/sntp.h
 #        src/lwIP/include/lwip/apps/sntp_opts.h
-#        src/lwIP/include/lwip/apps/tftp_opts.h
-#        src/lwIP/include/lwip/apps/tftp_server.h
+        src/lwIP/include/lwip/apps/tftp_opts.h
+        src/lwIP/include/lwip/apps/tftp_server.h
         src/lwIP/include/lwip/priv/altcp_priv.h
         src/lwIP/include/lwip/priv/api_msg.h
         src/lwIP/include/lwip/priv/mem_priv.h
@@ -298,7 +298,17 @@ add_executable(dummy
         src/lwIP/include/lwipopts.h
         src/lwIP/include/lwip/arch/cc.h
         src/lwIP/arch/time.c
-        src/lwIP/include/lwip/arch/time.h src/queue.c src/queue.h src/nanotube.h)
+        src/lwIP/include/lwip/arch/time.h
+        src/queue.c
+        src/queue.h
+        src/nanotube.h
+        src/device/ecm.h
+        src/device/ecm.c
+        src/device/usb.h
+        src/device/usb.c
+        src/log.c
+        src/log.h
+        src/nanotube.c src/tftp.c src/tftp.h)
 
 #add_executable(fs
 #        src/lwIP/apps/http/makefsdata/makefsdata.c

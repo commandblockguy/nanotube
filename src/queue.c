@@ -1,5 +1,6 @@
 #include <stddef.h>
 #include "queue.h"
+#include "log.h"
 
 /* You know that feeling where you type a word so many times it no longer feels like a real word? */
 /* Yeah. */
@@ -8,6 +9,7 @@ bool queue_add(queue_t *queue, void *elem) {
 	if((queue->first == queue->last + 1 && !queue_empty(queue)) ||
 	   (queue->first == 0 && queue->last == QUEUE_NUM_ELEMS - 1)) {
 		/* Queue is full */
+		mainlog("Queue is full.");
 		return false;
 	}
 
@@ -25,8 +27,7 @@ void *queue_get(queue_t *queue) {
 	ret = queue->elems[queue->first];
 
 	if(queue->first == queue->last) {
-		queue->first = 0;
-		queue->last = -1;
+		queue_init(queue);
 		return ret;
 	}
 
@@ -34,4 +35,9 @@ void *queue_get(queue_t *queue) {
 	queue->first %= QUEUE_NUM_ELEMS;
 
 	return ret;
+}
+
+void queue_init(queue_t *queue) {
+	queue->first = 0;
+	queue->last = -1;
 }
