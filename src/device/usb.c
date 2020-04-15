@@ -20,7 +20,7 @@ usb_error_t usb_handle_connect(usb_device_t dev) {
 	err_t error;
 	uint8_t type;
 
-	mainlog("Device connected.");
+	mainlog("Device connected.\n");
 	usb_ResetDevice(dev);
 	usb_WaitForEvents();
 
@@ -30,7 +30,7 @@ usb_error_t usb_handle_connect(usb_device_t dev) {
 	netif = malloc(sizeof(struct netif));
 
 	if(!netif) {
-		mainlog("couldn't allocate netif");
+		mainlog("couldn't allocate netif\n");
 		return USB_SUCCESS;
 	}
 
@@ -39,7 +39,7 @@ usb_error_t usb_handle_connect(usb_device_t dev) {
 	state = malloc(sizeof(netif_state_t));
 
 	if(!state) {
-		mainlog("couldn't allocate netif state");
+		mainlog("couldn't allocate netif state\n");
 		return USB_SUCCESS;
 	}
 
@@ -56,12 +56,12 @@ usb_error_t usb_handle_connect(usb_device_t dev) {
 	err = usb_SetConfiguration(dev, (usb_configuration_descriptor_t *) buf, len);
 	if(err) dbg_sprintf(dbgout, "Error %u on config set\n", err);
 
-	mainlog("set config");
+	mainlog("set config\n");
 
 	// todo: this is very bad
 	usb_SetInterface(dev, (usb_interface_descriptor_t * )(&buf[0x39]), len - 0x39);
 
-	mainlog("set interface");
+	mainlog("set interface\n");
 
 	state->in = usb_GetDeviceEndpoint(dev, EP_IN);
 	dbg_sprintf(dbgout, "got in endpoint: %p\n", state->in);
@@ -69,9 +69,9 @@ usb_error_t usb_handle_connect(usb_device_t dev) {
 	dbg_sprintf(dbgout, "got out endpoint: %p\n", state->out);
 
 	if(state->in && state->out)
-		mainlog("got endpoints");
+		mainlog("got endpoints\n");
 	else {
-		mainlog("error: couldn't get endpoints");
+		mainlog("error: couldn't get endpoints\n");
 		return USB_SUCCESS;
 	}
 
@@ -97,15 +97,15 @@ usb_error_t usb_handle_connect(usb_device_t dev) {
 	//todo: figure out how to do this correctly
 	netif_set_link_up(netif);
 
-	mainlog("interface set up");
+	mainlog("interface set up\n");
 
 #if LWIP_DHCP
     /* Start DHCP */
     error = dhcp_start(netif_default);
     if(error) {
-        custom_printf("error in dhcp start: %u", error);
+        custom_printf("error in dhcp start: %u\n", error);
     }
-    mainlog("dhcp started");
+    mainlog("dhcp started\n");
 #endif
 
 	return USB_SUCCESS;
@@ -113,7 +113,7 @@ usb_error_t usb_handle_connect(usb_device_t dev) {
 
 usb_error_t usb_handle_disconnect(usb_device_t dev) {
 	struct netif *netif = usb_GetDeviceData(dev);
-	mainlog("device disconnected");
+	mainlog("device disconnected\n");
 	netif_remove(netif);
 	free(netif->state);
 	free(netif);

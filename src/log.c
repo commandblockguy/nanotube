@@ -63,9 +63,9 @@ void log_packet(void *data, size_t size, bool receive) {
 
 #if LOG_PACKETS
 	if(receive) {
-        custom_printf("Packet %u received %u bytes.", pnum, size);
+        custom_printf("Packet %u received %u bytes.\n", pnum, size);
 	} else {
-        custom_printf("Packet %u sending %u bytes.", pnum, size);
+        custom_printf("Packet %u sending %u bytes.\n", pnum, size);
 	}
 #endif
 	pnum++;
@@ -81,32 +81,25 @@ void custom_printf(const char* format, ...) {
 
 void mainlog(const char *str) {
 	size_t length = strlen(str);
-#if LOG_TIMESTAMPS
-    uint24_t time = timer_3_Counter / 33;
-	char time_string[12];
-	sprintf(time_string, "[%8u] ", time);
-#endif
-	//dbg_sprintf(dbgout, "%s%s\n", time_string, str);
 #ifdef GRAPHICS
 	fontlib_DrawString(str);
 	fontlib_DrawString("\n");
 #endif
 	if(!pos) return;
-	if(offset + length < LOG_SIZE
+	if(offset + length < LOG_SIZE - 12) {
 #if LOG_TIMESTAMPS
-	- 11
+	    if(pos[offset - 1] == '\n') {
+            uint24_t time = timer_3_Counter / 33;
+            char time_string[12];
+            sprintf(time_string, "[%8u] ", time);
+            //dbg_sprintf(dbgout, "%s", time_string);
+            flash_write(&pos[offset], time_string, 11);
+            offset += 11;
+        }
 #endif
-	   - 2) {
-#if LOG_TIMESTAMPS
-        flash_write(&pos[offset], time_string, 11);
-        offset += 11;
-#endif
+        //dbg_sprintf(dbgout, "%s", str);
 		flash_write(&pos[offset], str, length);
 		offset += length;
-        if(str[length - 1] != '\n') {
-            flash_write(&pos[offset], "\n", 1);
-            offset++;
-        }
 	}
 }
 

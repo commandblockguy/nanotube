@@ -7,3 +7,5 @@ cmake-build-*
 .idea/
 log_setup/bin
 log_setup/obj
+get_sizes.py
+test.sh

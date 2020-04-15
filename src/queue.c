@@ -9,7 +9,7 @@ bool queue_add(queue_t *queue, void *elem) {
 	if((queue->first == queue->last + 1 && !queue_empty(queue)) ||
 	   (queue->first == 0 && queue->last == QUEUE_NUM_ELEMS - 1)) {
 		/* Queue is full */
-		mainlog("Queue is full.");
+		mainlog("Queue is full.\n");
 		return false;
 	}
 

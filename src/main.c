@@ -43,15 +43,15 @@ static usb_error_t handle_usb_event(usb_event_t event, void *event_data,
 }
 
 void httpc_transfer_callback(void *arg, httpc_result_t httpc_result, u32_t rx_content_len, u32_t srv_res, err_t err) {
-    custom_printf("HTTP callback: res %u, length %u, status %u, err %u", httpc_result, (uint24_t)rx_content_len, (uint24_t)srv_res, err);
+    custom_printf("HTTP callback: res %u, length %u, status %u, err %u\n", httpc_result, (uint24_t)rx_content_len, (uint24_t)srv_res, err);
 }
 
 err_t header_callback(httpc_state_t *connection, void *arg, struct pbuf *hdr, u16_t hdr_len,
                      u32_t content_len) {
     uint24_t print_length = hdr_len + content_len;
     if(print_length > 400) print_length = 400;
-    custom_printf("Header callback: header len %u, content length %u, data:", hdr_len, (uint24_t)content_len);
-    custom_printf("%.*s", print_length, hdr->payload);
+    custom_printf("Header callback: header len %u, content length %u, data:\n", hdr_len, (uint24_t)content_len);
+    custom_printf("%.*s\n", print_length, hdr->payload);
     return ERR_OK;
 }
 
@@ -59,8 +59,8 @@ err_t http_data_callback(void *arg, struct tcp_pcb *tpcb,
                          struct pbuf *p, err_t err) {
     uint24_t print_length = p->len;
     if(print_length > 400) print_length = 400;
-    custom_printf("HTTP data callback: err %u, len %u, data:", err, p->len, print_length, p->payload);
-    custom_printf("%.*s", print_length, p->payload);
+    custom_printf("HTTP data callback: err %u, len %u, data:\n", err, p->len, print_length, p->payload);
+    custom_printf("%.*s\n", print_length, p->payload);
     return ERR_OK;
 }
 
@@ -104,10 +104,10 @@ void main(void) {
 #endif
 
 	nt_init();
-	mainlog("nt_init called");
+	mainlog("nt_init called\n");
 
 	usb_Init(handle_usb_event, NULL, NULL, USB_DEFAULT_INIT_FLAGS);
-	mainlog("usb initialized");
+	mainlog("usb initialized\n");
 
 	//todo: determine whether I can remove this
 	//wait for interface
@@ -116,19 +116,19 @@ void main(void) {
 		if(kb_IsDown(kb_KeyClear)) goto exit;
 		usb_HandleEvents();
 	}
-	mainlog("got netif");
+	mainlog("got netif\n");
 
 	//httpd_init();
-	//mainlog("webserver initialized");
+	//mainlog("webserver initialized\n");
 
 	tftp_init(&tftpContext);
-	mainlog("tftp initialized");
+	mainlog("tftp initialized\n");
 
 	echo_init();
-	mainlog("tcpecho initialized");
+	mainlog("tcpecho initialized\n");
 
     httpc_get_file(&http_server, 80, "/test.html", &httpcConnection, http_data_callback, NULL, NULL);
-	mainlog("requested page over HTTP");
+	mainlog("requested page over HTTP\n");
 
 	/* Main loop */
 	do {

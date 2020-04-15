@@ -22,7 +22,7 @@ usb_error_t ecm_read_callback(usb_endpoint_t pEndpoint, usb_transfer_status_t st
 	struct netif *netif = pVoid;
 	netif_state_t *state = netif->state;
 	uint16_t type = ((struct eth_hdr*)eth_data)->type;
-	//mainlog("got packet");
+	//mainlog("got packet\n");
 	/* Ignore IPv6 and ARRIS router broadcasts */
 	if(type != PP_HTONS(ETHTYPE_IPV6) && type != 0x9988) {
 		p = pbuf_alloc(PBUF_RAW, size, PBUF_POOL);
@@ -36,7 +36,7 @@ usb_error_t ecm_read_callback(usb_endpoint_t pEndpoint, usb_transfer_status_t st
 			/* Put in a queue which is processed in main loop */
 			if(!queue_add(&state->queue, p)) {
 				/* queue is full -> packet loss */
-				mainlog("packet queue full - dropping");
+				mainlog("packet queue full - dropping\n");
 				pbuf_free(p);
 			}
 		}
@@ -47,9 +47,9 @@ usb_error_t ecm_read_callback(usb_endpoint_t pEndpoint, usb_transfer_status_t st
 
 usb_error_t ecm_write_callback(usb_endpoint_t pEndpoint, usb_transfer_status_t status, size_t size, void *pVoid) {
 	struct pbuf *p = pVoid;
-	//mainlog("sent packet");
+	//mainlog("sent packet\n");
 	if(size != p->tot_len) {
-        custom_printf("Transfer sent %u bytes, expected %u (status: %u)", size, p->tot_len, status);
+        custom_printf("Transfer sent %u bytes, expected %u (status: %u)\n", size, p->tot_len, status);
 	}
 	pbuf_free(p);
 	return USB_SUCCESS;
@@ -81,7 +81,7 @@ static err_t ecm_netif_output(struct netif *netif, struct pbuf *p) {
 err_t ecm_init_netif(struct netif *netif) {
     ip4_addr_t ip, netmask, gateway;
 	netif_state_t *state = netif->state;
-	mainlog("ecm netif init called");
+	mainlog("ecm netif init called\n");
 	netif->linkoutput = ecm_netif_output;
 	netif->output = etharp_output;
 #if LWIP_IPV6
@@ -114,9 +114,9 @@ usb_error_t ecm_set_packet_filer(usb_device_t dev, uint8_t filter){
 	setup.wValue = filter;
 	err = usb_DefaultControlTransfer(dev, &setup, NULL, 10, NULL);
 	if(err) {
-        custom_printf("error %u on filter set", err);
+        custom_printf("error %u on filter set\n", err);
 	}
 
-	mainlog("set filter");
+	mainlog("set filter\n");
 	return err;
 }

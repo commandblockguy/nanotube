@@ -6,10 +6,10 @@
 #include "lwIP/include/lwip/init.h"
 
 void nt_init(void) {
-	mainlog("starting");
+	mainlog("starting\n");
 	lwip_init();
 
-	mainlog("lwIP initialized");
+	mainlog("lwIP initialized\n");
 	timer_init();
 }
 
@@ -23,7 +23,7 @@ void nt_process(void) {
 		/* Check for received frames, feed them to lwIP */
 		if(p != NULL) {
 //		    int unicast;
-            //mainlog("got a packet");
+            //mainlog("got a packet\n");
             LINK_STATS_INC(link.recv);
 
 //            /* Update SNMP stats (only if you use SNMP) */
@@ -38,7 +38,7 @@ void nt_process(void) {
 			if(netif->input(p, netif) != ERR_OK) {
 				pbuf_free(p);
 			}
-			//mainlog("packet processed");
+			//mainlog("packet processed\n");
 		}
 	}
 
