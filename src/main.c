@@ -20,6 +20,7 @@
 #include "lwIP/include/lwip/apps/tftp_server.h"
 #include "tftp.h"
 #include "lwIP/apps/tcpecho_raw/echo.h"
+#include "lwIP/include/lwip/apps/http_client.h"
 
 #define ETHERNET_MTU 1500
 
@@ -40,6 +41,38 @@ static usb_error_t handle_usb_event(usb_event_t event, void *event_data,
 	}
 	return USB_SUCCESS;
 }
+
+void httpc_transfer_callback(void *arg, httpc_result_t httpc_result, u32_t rx_content_len, u32_t srv_res, err_t err) {
+    custom_printf("HTTP callback: res %u, length %u, status %u, err %u", httpc_result, (uint24_t)rx_content_len, (uint24_t)srv_res, err);
+}
+
+err_t header_callback(httpc_state_t *connection, void *arg, struct pbuf *hdr, u16_t hdr_len,
+                     u32_t content_len) {
+    uint24_t print_length = hdr_len + content_len;
+    if(print_length > 400) print_length = 400;
+    custom_printf("Header callback: header len %u, content length %u, data:", hdr_len, (uint24_t)content_len);
+    custom_printf("%.*s", print_length, hdr->payload);
+    return ERR_OK;
+}
+
+err_t http_data_callback(void *arg, struct tcp_pcb *tpcb,
+                         struct pbuf *p, err_t err) {
+    uint24_t print_length = p->len;
+    if(print_length > 400) print_length = 400;
+    custom_printf("HTTP data callback: err %u, len %u, data:", err, p->len, print_length, p->payload);
+    custom_printf("%.*s", print_length, p->payload);
+    return ERR_OK;
+}
+
+const httpc_connection_t httpcConnection = {
+    0,
+    0,
+    false,
+    httpc_transfer_callback,
+    header_callback
+};
+
+const ip4_addr_t http_server = IPADDR4_INIT_BYTES(199,15,107,244);
 
 void main(void) {
 #ifdef GRAPHICS
@@ -93,6 +126,9 @@ void main(void) {
 
 	echo_init();
 	mainlog("tcpecho initialized");
+
+    httpc_get_file(&http_server, 80, "/test.html", &httpcConnection, http_data_callback, NULL, NULL);
+	mainlog("requested page over HTTP");
 
 	/* Main loop */
 	do {

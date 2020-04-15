@@ -53,6 +53,7 @@
 #include "../../include/lwip/mem.h"
 #include "../../include/lwip/altcp_tls.h"
 #include "../../include/lwip/init.h"
+#include "../../../log.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -482,15 +483,23 @@ httpc_create_request_string(const httpc_connection_t *settings, const char *serv
 		LWIP_ASSERT("server_name != NULL", server_name != NULL);
 		if(server_port != HTTP_DEFAULT_PORT) {
 			//todo: fix snprintf
-			return sprintf(buffer, HTTPC_REQ_11_PROXY_PORT_FORMAT(server_name, server_port, uri, server_name));
+			size_t size = sprintf(logbuf, HTTPC_REQ_11_PROXY_PORT_FORMAT(server_name, server_port, uri, server_name));
+			memcpy(buffer, logbuf, size > buffer_size ? buffer_size : size);
+			return size;
 		} else {
-			return sprintf(buffer, HTTPC_REQ_11_PROXY_FORMAT(server_name, uri, server_name));
+            size_t size = sprintf(logbuf, HTTPC_REQ_11_PROXY_FORMAT(server_name, uri, server_name));
+            memcpy(buffer, logbuf, size > buffer_size ? buffer_size : size);
+            return size;
 		}
 	} else if(use_host) {
-		LWIP_ASSERT("server_name != NULL", server_name != NULL);
-		return sprintf(buffer, HTTPC_REQ_11_HOST_FORMAT(uri, server_name));
+        size_t size = sprintf(logbuf, HTTPC_REQ_11_HOST_FORMAT(uri, server_name));
+        LWIP_ASSERT("server_name != NULL", server_name != NULL);
+        memcpy(buffer, logbuf, size > buffer_size ? buffer_size : size);
+		return size;
 	} else {
-		return sprintf(buffer, HTTPC_REQ_11_FORMAT(uri));
+	    size_t size = sprintf(buffer, HTTPC_REQ_11_FORMAT(uri));
+        memcpy(buffer, logbuf, size > buffer_size ? buffer_size : size);
+        return size;
 	}
 }
 
