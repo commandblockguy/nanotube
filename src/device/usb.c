@@ -103,9 +103,7 @@ usb_error_t usb_handle_connect(usb_device_t dev) {
     /* Start DHCP */
     error = dhcp_start(netif_default);
     if(error) {
-        char tmpstr[30];
-        sprintf(tmpstr, "error in dhcp start: %u", error);
-        mainlog(tmpstr);
+        custom_printf("error in dhcp start: %u", error);
     }
     mainlog("dhcp started");
 #endif

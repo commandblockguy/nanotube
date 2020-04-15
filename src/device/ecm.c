@@ -46,15 +46,12 @@ usb_error_t ecm_read_callback(usb_endpoint_t pEndpoint, usb_transfer_status_t st
 }
 
 usb_error_t ecm_write_callback(usb_endpoint_t pEndpoint, usb_transfer_status_t status, size_t size, void *pVoid) {
-	char tmpstr[50];
 	struct pbuf *p = pVoid;
 	//mainlog("sent packet");
 	if(size != p->tot_len) {
-		sprintf(tmpstr, "Transfer sent %u bytes, expected %u (status: %u)", size, p->tot_len, status);
-		mainlog(tmpstr);
+        custom_printf("Transfer sent %u bytes, expected %u (status: %u)", size, p->tot_len, status);
 	}
 	pbuf_free(p);
-	mainlog(tmpstr);
 	return USB_SUCCESS;
 }
 
@@ -112,14 +109,12 @@ err_t ecm_init_netif(struct netif *netif) {
 }
 
 usb_error_t ecm_set_packet_filer(usb_device_t dev, uint8_t filter){
-	char tmpstr[50];
 	usb_error_t err;
 	usb_control_setup_t setup = {0x21, 0x43, 0, 1, 0};
 	setup.wValue = filter;
 	err = usb_DefaultControlTransfer(dev, &setup, NULL, 10, NULL);
 	if(err) {
-		sprintf(tmpstr, "error %u on filter set", err);
-		mainlog(tmpstr);
+        custom_printf("error %u on filter set", err);
 	}
 
 	mainlog("set filter");

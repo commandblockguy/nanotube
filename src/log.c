@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include <string.h>
+#include <stdarg.h>
 #include <fileioc.h>
 #include <keypadc.h>
 
@@ -9,6 +10,8 @@
 
 char *pos;
 uint24_t offset;
+
+char logbuf[1024];
 
 bool log_init(void) {
 	ti_var_t slot;
@@ -60,42 +63,50 @@ void log_packet(void *data, size_t size, bool receive) {
 
 #if LOG_PACKETS
 	if(receive) {
-		char tmpstr[35];
-		sprintf(tmpstr, "Packet %u received %u bytes.", pnum, size);
-		mainlog(tmpstr);
+        custom_printf("Packet %u received %u bytes.", pnum, size);
 	} else {
-		char tmpstr[35];
-		sprintf(tmpstr, "Packet %u sending %u bytes.", pnum, size);
-		mainlog(tmpstr);
+        custom_printf("Packet %u sending %u bytes.", pnum, size);
 	}
 #endif
 	pnum++;
 }
 #endif
 
+void custom_printf(const char* format, ...) {
+    va_list args;
+    va_start(args, format);
+    vsprintf(logbuf, format, args);
+    mainlog(logbuf);
+}
+
 void mainlog(const char *str) {
-    uint24_t time = timer_3_Counter / 33;
 	size_t length = strlen(str);
+#if LOG_TIMESTAMPS
+    uint24_t time = timer_3_Counter / 33;
 	char time_string[12];
 	sprintf(time_string, "[%8u] ", time);
+#endif
 	//dbg_sprintf(dbgout, "%s%s\n", time_string, str);
 #ifdef GRAPHICS
 	fontlib_DrawString(str);
 	fontlib_DrawString("\n");
 #endif
 	if(!pos) return;
-	//todo: remove
-	if(time_string[0] != '[' && str[0] != '#') {
-	    mainlog("#Something has gone very very wrong");
-	    return;
-	}
-	if(offset + length < LOG_SIZE - 13) {
+	if(offset + length < LOG_SIZE
+#if LOG_TIMESTAMPS
+	- 11
+#endif
+	   - 2) {
+#if LOG_TIMESTAMPS
         flash_write(&pos[offset], time_string, 11);
         offset += 11;
+#endif
 		flash_write(&pos[offset], str, length);
 		offset += length;
-		flash_write(&pos[offset], "\n", 1);
-		offset++;
+        if(str[length - 1] != '\n') {
+            flash_write(&pos[offset], "\n", 1);
+            offset++;
+        }
 	}
 }
 
