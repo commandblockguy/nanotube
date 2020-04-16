@@ -79,7 +79,6 @@ static err_t ecm_netif_output(struct netif *netif, struct pbuf *p) {
 }
 
 err_t ecm_init_netif(struct netif *netif) {
-    ip4_addr_t ip, netmask, gateway;
 	netif_state_t *state = netif->state;
 	mainlog("ecm netif init called\n");
 	netif->linkoutput = ecm_netif_output;
@@ -93,11 +92,9 @@ err_t ecm_init_netif(struct netif *netif) {
 //	mac_addr = //ecm_get_mac_address(state->dev);
 	memcpy(netif->hwaddr, mac_addr, ETH_HWADDR_LEN);
 	netif->hwaddr_len = ETH_HWADDR_LEN;
-	//todo: remove / use dhcp
-    IP4_ADDR(&ip, 192,168,0,6);
-    IP4_ADDR(&netmask, 255,255,255,0);
-    IP4_ADDR(&gateway, 192,168,0,1);
-    netif_set_addr(netif, &ip, &netmask, &gateway);
+
+	netif->name[0] = 'e';
+	netif->name[1] = 't';
 
 	queue_init(&state->queue);
 

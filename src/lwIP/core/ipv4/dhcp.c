@@ -783,7 +783,6 @@ dhcp_start(struct netif *netif) {
 
 	/* no DHCP client attached yet? */
 	if(dhcp == NULL) {
-		mainlog("[DHCP] no client already attached\n");
 		LWIP_DEBUGF(DHCP_DEBUG | LWIP_DBG_TRACE, ("dhcp_start(): mallocing new DHCP client\n"));
 		dhcp = (struct dhcp *) mem_malloc(sizeof(struct dhcp));
 		if(dhcp == NULL) {
@@ -793,7 +792,7 @@ dhcp_start(struct netif *netif) {
 
 		/* store this dhcp client in the netif */
 		netif_set_client_data(netif, LWIP_NETIF_CLIENT_DATA_INDEX_DHCP, dhcp);
-		LWIP_DEBUGF(DHCP_DEBUG | LWIP_DBG_TRACE, ("dhcp_start(): allocated dhcp"));
+		LWIP_DEBUGF(DHCP_DEBUG | LWIP_DBG_TRACE, ("dhcp_start(): allocated dhcp\n"));
 		/* already has DHCP client attached */
 	} else {
 		LWIP_DEBUGF(DHCP_DEBUG | LWIP_DBG_TRACE | LWIP_DBG_STATE, ("dhcp_start(): restarting DHCP configuration\n"));
@@ -816,7 +815,6 @@ dhcp_start(struct netif *netif) {
 	dhcp->pcb_allocated = 1;
 
 	if(!netif_is_link_up(netif)) {
-		mainlog("[DHCP] link is down\n");
 		/* set state INIT and wait for dhcp_network_changed() to call dhcp_discover() */
 		dhcp_set_state(dhcp, DHCP_STATE_INIT);
 		return ERR_OK;
@@ -1023,14 +1021,13 @@ dhcp_discover(struct netif *netif) {
 	struct pbuf *p_out;
 	u16_t options_out_len;
 
-	mainlog("[DHCP] sending discover\n");
-
 	LWIP_DEBUGF(DHCP_DEBUG | LWIP_DBG_TRACE, ("dhcp_discover()\n"));
 
 	ip4_addr_set_any(&dhcp->offered_ip_addr);
 	dhcp_set_state(dhcp, DHCP_STATE_SELECTING);
 	/* create and initialize the DHCP message header */
 	p_out = dhcp_create_msg(netif, dhcp, DHCP_DISCOVER, &options_out_len);
+	custom_printf("pbuf: %p, payload %p\n", p_out, p_out->payload); // todo: remove
 	if(p_out != NULL) {
 		struct dhcp_msg *msg_out = (struct dhcp_msg *) p_out->payload;
 		LWIP_DEBUGF(DHCP_DEBUG | LWIP_DBG_TRACE, ("dhcp_discover: making request\n"));

@@ -12,6 +12,12 @@
 #define EP_OUT 0x02
 
 usb_error_t usb_handle_connect(usb_device_t dev) {
+#if !LWIP_DHCP
+    // todo: handle
+    ip4_addr_t ip = IPADDR4_INIT_BYTES(192,168,0,6);
+    ip4_addr_t netmask = IPADDR4_INIT_BYTES(255,255,255,0);
+    ip4_addr_t gateway = IPADDR4_INIT_BYTES(192,168,0,1);
+#endif
 	struct netif *netif = NULL;
 	netif_state_t *state = NULL;
 	uint8_t buf[256];
@@ -23,9 +29,6 @@ usb_error_t usb_handle_connect(usb_device_t dev) {
 	mainlog("Device connected.\n");
 	usb_ResetDevice(dev);
 	usb_WaitForEvents();
-
-	//todo: determine device type
-	type = DEVICE_CDC_ECM;
 
 	netif = malloc(sizeof(struct netif));
 
@@ -43,18 +46,15 @@ usb_error_t usb_handle_connect(usb_device_t dev) {
 		return USB_SUCCESS;
 	}
 
-	state->type = type;
-	state->dev = dev;
-
 	//todo: figure out what to do here
 	len = usb_GetConfigurationDescriptorTotalLength(dev, CONFIGURATION - 1);
 	err = usb_GetDescriptor(dev, USB_CONFIGURATION_DESCRIPTOR, CONFIGURATION - 1, buf, len, NULL);
-	if(err) dbg_sprintf(dbgout, "Error %u on config get\n", err);
+	if(err) custom_printf("Error %u on config get\n", err);
 
-	dbg_sprintf(dbgout, "got config descriptor %p (%u)\n", buf, len);
+    custom_printf("got config descriptor %p (%u)\n", buf, len);
 
 	err = usb_SetConfiguration(dev, (usb_configuration_descriptor_t *) buf, len);
-	if(err) dbg_sprintf(dbgout, "Error %u on config set\n", err);
+	if(err) custom_printf("Error %u on config set\n", err);
 
 	mainlog("set config\n");
 
@@ -64,9 +64,9 @@ usb_error_t usb_handle_connect(usb_device_t dev) {
 	mainlog("set interface\n");
 
 	state->in = usb_GetDeviceEndpoint(dev, EP_IN);
-	dbg_sprintf(dbgout, "got in endpoint: %p\n", state->in);
+    custom_printf("got in endpoint: %p\n", state->in);
 	state->out = usb_GetDeviceEndpoint(dev, EP_OUT);
-	dbg_sprintf(dbgout, "got out endpoint: %p\n", state->out);
+    custom_printf("got out endpoint: %p\n", state->out);
 
 	if(state->in && state->out)
 		mainlog("got endpoints\n");
@@ -75,15 +75,21 @@ usb_error_t usb_handle_connect(usb_device_t dev) {
 		return USB_SUCCESS;
 	}
 
+    //todo: determine device type
+    type = DEVICE_CDC_ECM;
+
+    state->type = type;
+    state->dev = dev;
+
 	//todo: get actual function
+#if LWIP_DHCP
 	netif_add(netif, IP4_ADDR_ANY, IP4_ADDR_ANY, IP4_ADDR_ANY, state, ecm_init_netif, netif_input);
+#else
+    netif_add(netif, &ip, &netmask, &gateway, state, ecm_init_netif, netif_input);
+#endif
 
 	//todo: where should this go?
 	netif->hostname = "ti84pce";
-
-	netif->name[0] = 'e';
-	//todo: more numbers
-	netif->name[1] = '0';
 
 #if LWIP_IPV6
 	netif_create_ip6_linklocal_address(netif, 1);
@@ -101,7 +107,7 @@ usb_error_t usb_handle_connect(usb_device_t dev) {
 
 #if LWIP_DHCP
     /* Start DHCP */
-    error = dhcp_start(netif_default);
+    error = dhcp_start(netif);
     if(error) {
         custom_printf("error in dhcp start: %u\n", error);
     }

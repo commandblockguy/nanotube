@@ -25,7 +25,7 @@
 #define ETHERNET_MTU 1500
 
 //todo: remove
-uint8_t mac_addr[6] = {0xA0, 0xCE, 0xC8, 0xE0, 0x0F, 0x35};
+const uint8_t mac_addr[6] = {0xA0, 0xCE, 0xC8, 0xE0, 0x0F, 0x35};
 
 uint8_t eth_data[ETHERNET_MTU + 18];
 
@@ -121,11 +121,11 @@ void main(void) {
 	//httpd_init();
 	//mainlog("webserver initialized\n");
 
-	tftp_init(&tftpContext);
-	mainlog("tftp initialized\n");
+	//tftp_init(&tftpContext);
+	//mainlog("tftp initialized\n");
 
-	echo_init();
-	mainlog("tcpecho initialized\n");
+	//echo_init();
+	//mainlog("tcpecho initialized\n");
 
     httpc_get_file(&http_server, 80, "/test.html", &httpcConnection, http_data_callback, NULL, NULL);
 	mainlog("requested page over HTTP\n");

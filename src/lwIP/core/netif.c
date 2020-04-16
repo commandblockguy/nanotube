@@ -112,7 +112,7 @@ static netif_ext_callback_t *ext_callback;
 #if !LWIP_SINGLE_NETIF
 struct netif *netif_list;
 #endif /* !LWIP_SINGLE_NETIF */
-struct netif *netif_default = NULL;
+struct netif *netif_default;
 
 #define netif_index_to_num(index)   ((index) - 1)
 static u8_t netif_num;
@@ -181,6 +181,7 @@ netif_loopif_init(struct netif *netif)
 
 void
 netif_init(void) {
+    netif_default = NULL;
 #if LWIP_HAVE_LOOPIF
 #if LWIP_IPV4
 #define LOOPIF_ADDRINIT &loop_ipaddr, &loop_netmask, &loop_gw,
