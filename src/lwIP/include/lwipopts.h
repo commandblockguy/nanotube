@@ -6,7 +6,7 @@
 #define LWIP_PROVIDE_ERRNO 1
 #define NO_SYS 1
 #define LWIP_DHCP 0
-#define LWIP_DNS 0
+#define LWIP_DNS 1
 #define LWIP_NETCONN 0
 #define LWIP_SOCKET 0
 #define SYS_LIGHTWEIGHT_PROT 0
@@ -18,6 +18,5 @@
 #define LWIP_NETIF_HOSTNAME 1
 #define LWIP_DEBUG 1
 #define DHCP_DEBUG LWIP_DBG_ON
-#define UDP_DEBUG LWIP_DBG_ON
 
 #endif //NANOTUBE_LWIPOPTS_H

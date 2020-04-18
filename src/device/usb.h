@@ -37,4 +37,6 @@ void netif_init_common(struct netif *netif);
 usb_error_t usb_handle_connect(usb_device_t dev);
 usb_error_t usb_handle_disconnect(usb_device_t dev);
 
+usb_error_t usb_handle_event(usb_event_t event, void *event_data, usb_callback_data_t *callback_data);
+
 #endif //NANOTUBE_USB_H

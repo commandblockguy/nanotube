@@ -235,6 +235,15 @@ bool process_config_descriptor(usb_device_t dev, uint8_t config_num) {
     return netif_found;
 }
 
+usb_error_t usb_handle_event(usb_event_t event, void *event_data, usb_callback_data_t *callback_data) {
+    if(event == USB_DEVICE_CONNECTED_EVENT) {
+        return usb_handle_connect(event_data);
+    } else if(event == USB_DEVICE_DISCONNECTED_EVENT) {
+        return usb_handle_disconnect(event_data);
+    }
+    return USB_SUCCESS;
+}
+
 usb_error_t usb_handle_connect(usb_device_t dev) {
     usb_device_descriptor_t dev_desc;
     uint8_t config;

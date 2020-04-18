@@ -21,25 +21,17 @@
 #include "tftp.h"
 #include "lwIP/apps/tcpecho_raw/echo.h"
 #include "lwIP/include/lwip/apps/http_client.h"
+#include "lwIP/include/lwip/dns.h"
 
 const ip4_addr_t ip =      IPADDR4_INIT_BYTES(192,168,0,6);
 const ip4_addr_t netmask = IPADDR4_INIT_BYTES(255,255,255,0);
 const ip4_addr_t gateway = IPADDR4_INIT_BYTES(192,168,0,1);
+const ip4_addr_t dns =     IPADDR4_INIT_BYTES(192,168,0,3);
 
 uint8_t eth_data[1518];
 
 //will either save space or look cool
 //uint8_t *eth_data = gfx_vram;
-
-static usb_error_t handle_usb_event(usb_event_t event, void *event_data,
-                                    usb_callback_data_t *callback_data) {
-	if(event == USB_DEVICE_CONNECTED_EVENT) {
-		return usb_handle_connect(event_data);
-	} else if(event == USB_DEVICE_DISCONNECTED_EVENT) {
-		return usb_handle_disconnect(event_data);
-	}
-	return USB_SUCCESS;
-}
 
 void httpc_transfer_callback(void *arg, httpc_result_t httpc_result, u32_t rx_content_len, u32_t srv_res, err_t err) {
     custom_printf("HTTP callback: res %u, length %u, status %u, err %u\n", httpc_result, (uint24_t)rx_content_len, (uint24_t)srv_res, err);
@@ -70,8 +62,6 @@ const httpc_connection_t httpcConnection = {
     httpc_transfer_callback,
     header_callback
 };
-
-const ip4_addr_t http_server = IPADDR4_INIT_BYTES(199,15,107,244);
 
 void main(void) {
 #ifdef GRAPHICS
@@ -105,7 +95,7 @@ void main(void) {
 	nt_init();
 	mainlog("nt_init called\n");
 
-	usb_Init(handle_usb_event, NULL, NULL, USB_DEFAULT_INIT_FLAGS);
+	usb_Init(usb_handle_event, NULL, NULL, USB_DEFAULT_INIT_FLAGS);
 	mainlog("usb initialized\n");
 
 	//todo: determine whether I can remove this
@@ -117,6 +107,8 @@ void main(void) {
 	}
 	mainlog("got netif\n");
 
+	dns_setserver(0, &dns);
+
 	//httpd_init();
 	//mainlog("webserver initialized\n");
 
@@ -126,7 +118,7 @@ void main(void) {
 	//echo_init();
 	//mainlog("tcpecho initialized\n");
 
-    httpc_get_file(&http_server, 80, "/test.html", &httpcConnection, http_data_callback, NULL, NULL);
+    httpc_get_file_dns("commandblockguy.xyz", 80, "/test.html", &httpcConnection, http_data_callback, NULL, NULL);
 	mainlog("requested page over HTTP\n");
 
 	/* Main loop */
