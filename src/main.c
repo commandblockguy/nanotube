@@ -22,12 +22,11 @@
 #include "lwIP/apps/tcpecho_raw/echo.h"
 #include "lwIP/include/lwip/apps/http_client.h"
 
-#define ETHERNET_MTU 1500
+const ip4_addr_t ip =      IPADDR4_INIT_BYTES(192,168,0,6);
+const ip4_addr_t netmask = IPADDR4_INIT_BYTES(255,255,255,0);
+const ip4_addr_t gateway = IPADDR4_INIT_BYTES(192,168,0,1);
 
-//todo: remove
-const uint8_t mac_addr[6] = {0xA0, 0xCE, 0xC8, 0xE0, 0x0F, 0x35};
-
-uint8_t eth_data[ETHERNET_MTU + 18];
+uint8_t eth_data[1518];
 
 //will either save space or look cool
 //uint8_t *eth_data = gfx_vram;
@@ -35,9 +34,9 @@ uint8_t eth_data[ETHERNET_MTU + 18];
 static usb_error_t handle_usb_event(usb_event_t event, void *event_data,
                                     usb_callback_data_t *callback_data) {
 	if(event == USB_DEVICE_CONNECTED_EVENT) {
-		usb_handle_connect(event_data);
+		return usb_handle_connect(event_data);
 	} else if(event == USB_DEVICE_DISCONNECTED_EVENT) {
-		usb_handle_disconnect(event_data);
+		return usb_handle_disconnect(event_data);
 	}
 	return USB_SUCCESS;
 }
