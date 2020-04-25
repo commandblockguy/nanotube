@@ -8,20 +8,20 @@
 #include <fileioc.h>
 #include <graphx.h>
 
-#ifdef GRAPHICS
-#include <fontlibc.h>
-#endif
-
 #include "lwIP/include/lwip/netif.h"
 #include "lwIP/include/lwip/apps/httpd.h"
 #include "device/usb.h"
-#include "log.h"
 #include "nanotube.h"
 #include "lwIP/include/lwip/apps/tftp_server.h"
 #include "tftp.h"
 #include "lwIP/apps/tcpecho_raw/echo.h"
 #include "lwIP/include/lwip/apps/http_client.h"
 #include "lwIP/include/lwip/dns.h"
+#include "log.h"
+
+#if GRAPHICS
+#include <fontlibc.h>
+#endif
 
 const ip4_addr_t ip =      IPADDR4_INIT_BYTES(192,168,0,6);
 const ip4_addr_t netmask = IPADDR4_INIT_BYTES(255,255,255,0);
@@ -64,7 +64,7 @@ const httpc_connection_t httpcConnection = {
 };
 
 void main(void) {
-#ifdef GRAPHICS
+#if GRAPHICS
 	fontlib_font_t *font;
 #endif
 
@@ -74,7 +74,7 @@ void main(void) {
 	    return;
 	}
 
-#ifdef GRAPHICS
+#if GRAPHICS
 	gfx_Begin();
 	gfx_FillScreen(gfx_black);
 
@@ -132,7 +132,7 @@ void main(void) {
     tftp_cleanup();
 	usb_Cleanup();
 	ti_CloseAll();
-#ifdef GRAPHICS
+#if GRAPHICS
 	gfx_End();
 #endif
 }

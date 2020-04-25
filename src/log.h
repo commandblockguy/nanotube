@@ -9,6 +9,7 @@
 #define LOG_NAME "ETHLOG"
 #define LOG_SIZE 64000
 #define LOG_TIMESTAMPS 1
+#define GRAPHICS 1
 
 extern char logbuf[1024];
 

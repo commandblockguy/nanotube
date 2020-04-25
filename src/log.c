@@ -5,6 +5,7 @@
 #include <keypadc.h>
 
 #include <debug.h>
+#include <fontlibc.h>
 
 #include "log.h"
 
@@ -81,10 +82,6 @@ void custom_printf(const char* format, ...) {
 
 void mainlog(const char *str) {
 	size_t length = strlen(str);
-#ifdef GRAPHICS
-	fontlib_DrawString(str);
-	fontlib_DrawString("\n");
-#endif
 	if(!pos) return;
 	if(offset + length < LOG_SIZE - 12) {
 #if LOG_TIMESTAMPS
@@ -94,11 +91,17 @@ void mainlog(const char *str) {
             sprintf(time_string, "[%8u] ", time);
             //dbg_sprintf(dbgout, "%s", time_string);
             flash_write(&pos[offset], time_string, 11);
+#if GRAPHICS
+            fontlib_DrawString(time_string);
+#endif
             offset += 11;
         }
 #endif
         //dbg_sprintf(dbgout, "%s", str);
 		flash_write(&pos[offset], str, length);
+#if GRAPHICS
+        fontlib_DrawString(str);
+#endif
 		offset += length;
 	}
 }
