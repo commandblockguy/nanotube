@@ -1,12 +1,13 @@
 #include <stddef.h>
 #include <stdint.h>
-
+#include <string.h>
 #include <stdio.h>
 
 #include <keypadc.h>
 #include <usbdrvce.h>
 #include <fileioc.h>
 #include <graphx.h>
+#include <fontlibc.h>
 
 #include "lwIP/include/lwip/netif.h"
 #include "lwIP/include/lwip/apps/httpd.h"
@@ -18,10 +19,7 @@
 #include "lwIP/include/lwip/apps/http_client.h"
 #include "lwIP/include/lwip/dns.h"
 #include "log.h"
-
-#if GRAPHICS
-#include <fontlibc.h>
-#endif
+#include "irc.h"
 
 const ip4_addr_t ip =      IPADDR4_INIT_BYTES(192,168,0,6);
 const ip4_addr_t netmask = IPADDR4_INIT_BYTES(255,255,255,0);
@@ -55,6 +53,42 @@ err_t http_data_callback(void *arg, struct tcp_pcb *tpcb,
     return ERR_OK;
 }
 
+err_t irc_connect_callback(struct irc_conn *conn, err_t err) {
+    custom_printf("IRC connected with error %u\n", err);
+
+    return ERR_OK;
+}
+
+err_t irc_message_callback(struct irc_conn *conn, const char *message) {
+    mainlog("[Raw IRC] ");
+    mainlog(message);
+    mainlog("\n");
+
+    return ERR_OK;
+}
+
+err_t irc_privmsg_callback(struct irc_conn *conn, const char *channel, const char *sender, const char *message) {
+    custom_printf("%s: <%s> ", channel, sender);
+    mainlog(message);
+    mainlog("\n");
+
+    if(strcmp(sender, "commandz") == 0) {
+        if(memcmp(message, "> ", 2) == 0) {
+            char *quoted = &message[2];
+            // This is terrible but I'm too lazy to use a proper buffer
+            size_t len = strlen(quoted);
+            char *ending = &quoted[len];
+            char ending_bkp[2];
+            memcpy(ending_bkp, ending, 2);
+            memcpy(ending, "\r\n", 2);
+            irc_send_raw(conn, quoted, len + 2);
+            memcpy(ending, ending_bkp, 2);
+        }
+    }
+
+    return ERR_OK;
+}
+
 const httpc_connection_t httpcConnection = {
     0,
     0,
@@ -63,7 +97,10 @@ const httpc_connection_t httpcConnection = {
     header_callback
 };
 
+struct irc_conn ircConnection;
+
 void main(void) {
+    err_t err;
 #if GRAPHICS
 	fontlib_font_t *font;
 #endif
@@ -118,21 +155,46 @@ void main(void) {
 	//echo_init();
 	//mainlog("tcpecho initialized\n");
 
-    httpc_get_file_dns("commandblockguy.xyz", 80, "/test.html", &httpcConnection, http_data_callback, NULL, NULL);
-	mainlog("requested page over HTTP\n");
+	err = irc_init(&ircConnection, "irc.choopa.net", 6667, "irCEv2", "TI84+CE IRC Client", irc_connect_callback, irc_message_callback, irc_privmsg_callback);
+    custom_printf("IRC init returned %u\n", err);
+
+    //httpc_get_file_dns("commandblockguy.xyz", 80, "/test.html", &httpcConnection, http_data_callback, NULL, NULL);
+	//mainlog("requested page over HTTP\n");
 
 	/* Main loop */
 	do {
 		kb_Scan();
 		nt_process();
+		if(kb_IsDown(kb_Key2nd)) {
+		    static bool joined = false;
+		    if(!joined) {
+		        joined = true;
+		        irc_join(&ircConnection, "#flood");
+		    }
+		}
+        if(kb_IsDown(kb_KeyAlpha)) {
+            static bool sent = false;
+            if(!sent) {
+                sent = true;
+                irc_send(&ircConnection, "#flood", "Test message");
+            }
+        }
+		if(kb_IsDown(kb_KeyMode)) {
+		    static bool closed = false;
+		    if(!closed) {
+		        closed = true;
+		        irc_close(&ircConnection);
+		    }
+		}
 		/* You would put other stuff here, presumably */
 	} while(!kb_IsDown(kb_KeyClear));
 
 	exit:
     tftp_cleanup();
-	usb_Cleanup();
+    irc_close(&ircConnection);
 	ti_CloseAll();
 #if GRAPHICS
 	gfx_End();
 #endif
+    usb_Cleanup();
 }

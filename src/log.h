@@ -4,8 +4,8 @@
 #include <stddef.h>
 #include <stdbool.h>
 
-#define CAPTURE_PACKETS 1
-#define LOG_PACKETS 1
+#define CAPTURE_PACKETS 0
+#define LOG_PACKETS 0
 #define LOG_NAME "ETHLOG"
 #define LOG_SIZE 64000
 #define LOG_TIMESTAMPS 1
@@ -21,7 +21,7 @@ void log_packet(void *data, size_t size, bool receive);
 #define log_packet(data, size, receive)
 #endif
 
-#define LOG_LINE() custom_printf("line %u", __LINE__)
+#define LOG_LINE() custom_printf("line %u\n", __LINE__)
 
 void custom_printf(const char* arg, ...);
 
