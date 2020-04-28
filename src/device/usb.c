@@ -5,6 +5,8 @@
 #include "ecm.h"
 #include <stdlib.h>
 
+// todo: associate netifs with device so that we can free them on disconnect / error
+
 #if !LWIP_DHCP
 extern ip4_addr_t ip, netmask, gateway;
 #endif
@@ -286,10 +288,6 @@ usb_error_t usb_handle_connect(usb_device_t dev) {
 }
 
 usb_error_t usb_handle_disconnect(usb_device_t dev) {
-    struct netif *netif = usb_GetDeviceData(dev);
     mainlog("device disconnected\n");
-    netif_remove(netif);
-    free(netif->state);
-    free(netif);
     return USB_SUCCESS;
 }

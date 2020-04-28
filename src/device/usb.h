@@ -30,6 +30,8 @@ typedef struct {
 	usb_endpoint_t out;
 	queue_t queue;
 	uint8_t mac_index;
+	//todo: remove
+	bool halted;
 } netif_state_t;
 
 void netif_init_common(struct netif *netif);

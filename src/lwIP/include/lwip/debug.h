@@ -130,7 +130,7 @@
 
 /* if "expression" isn't true, then print "message" and execute "handler" expression */
 #define LWIP_ERROR(message, expression, handler) do { if (!(expression)) { \
-  LWIP_PLATFORM_ERROR(message); handler;}} while(0)
+  LWIP_PLATFORM_ERROR(message "\n"); handler;}} while(0)
 #endif /* LWIP_ERROR */
 
 /** Enable debug message printing, but only if debug message type is enabled

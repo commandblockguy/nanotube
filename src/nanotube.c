@@ -5,6 +5,9 @@
 #include "lwIP/include/lwip/arch/time.h"
 #include "lwIP/include/lwip/init.h"
 
+// todo: remove
+void clear_halt(struct netif *netif);
+
 void nt_init(void) {
 	mainlog("starting\n");
 	lwip_init();
@@ -40,6 +43,9 @@ void nt_process(void) {
 			}
 			//mainlog("packet processed\n");
 		}
+
+		//todo: remove
+		clear_halt(netif);
 	}
 
 	/* Cyclic lwIP timers check */

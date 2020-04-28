@@ -15,6 +15,22 @@
 
 extern uint8_t eth_data[ETHERNET_MTU];
 
+//todo: remove
+void clear_halt(struct netif *netif) {
+    netif_state_t *state = netif->state;
+    if(state->halted) {
+        usb_error_t error;
+        error = usb_ClearEndpointHalt(state->in);
+        if(error) custom_printf("Error %u clearing ep halt\n", error);
+        error = usb_ScheduleTransfer(state->in, eth_data, sizeof(eth_data), ecm_read_callback, netif);
+        if(error) {
+            custom_printf("Error %u rescheduling transfer\n", error);
+        } else {
+            state->halted = false;
+        }
+    }
+}
+
 /* For USB CDC Ethernet Control Model devices */
 
 usb_error_t ecm_read_callback(usb_endpoint_t pEndpoint, usb_transfer_status_t status, size_t size, void *pVoid) {
@@ -24,7 +40,7 @@ usb_error_t ecm_read_callback(usb_endpoint_t pEndpoint, usb_transfer_status_t st
 	uint16_t type = ((struct eth_hdr*)eth_data)->type;
 	//mainlog("got packet\n");
 	/* Ignore IPv6 and ARRIS router broadcasts */
-	if(type != PP_HTONS(ETHTYPE_IPV6) && type != 0x9988) {
+	if(type != PP_HTONS(ETHTYPE_IPV6) && type != 0x9988 && size) {
 		p = pbuf_alloc(PBUF_RAW, size, PBUF_POOL);
 		if(p != NULL) {
 
@@ -41,8 +57,15 @@ usb_error_t ecm_read_callback(usb_endpoint_t pEndpoint, usb_transfer_status_t st
 			}
 		}
 	}
-	usb_ScheduleTransfer(pEndpoint, eth_data, sizeof(eth_data), ecm_read_callback, netif);
-	return USB_SUCCESS;
+    if(status) {
+        custom_printf("Transfer returned status %02x\n", status);
+        if(status & USB_TRANSFER_FAILED) {
+            state->halted = true;
+            return USB_IGNORE;
+        }
+    }
+    usb_ScheduleTransfer(pEndpoint, eth_data, sizeof(eth_data), ecm_read_callback, netif);
+    return USB_SUCCESS;
 }
 
 usb_error_t ecm_write_callback(usb_endpoint_t pEndpoint, usb_transfer_status_t status, size_t size, void *pVoid) {
@@ -133,8 +156,9 @@ err_t ecm_init_netif(struct netif *netif) {
 
 	queue_init(&state->queue);
 
-	ecm_set_packet_filer(state->dev, PACKET_TYPE_MULTICAST | PACKET_TYPE_BROADCAST | PACKET_TYPE_DIRECTED);
+	ecm_set_packet_filer(state->dev, PACKET_TYPE_BROADCAST | PACKET_TYPE_DIRECTED);
 
+	state->halted = false;
 	usb_ScheduleTransfer(state->in, eth_data, sizeof(eth_data), ecm_read_callback, netif);
 
 	netif_init_common(netif);
