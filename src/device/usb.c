@@ -218,6 +218,7 @@ bool process_config_descriptor(usb_device_t dev, uint8_t config_num) {
 
                 state->type = DEVICE_CDC_ECM;
                 state->mac_index = eth_desc->iMACAddress;
+                state->mtu = eth_desc->wMaxSegmentSize;
 
 #if LWIP_DHCP
                 netif_add(netif, IP4_ADDR_ANY, IP4_ADDR_ANY, IP4_ADDR_ANY, state, ecm_init_netif, netif_input);

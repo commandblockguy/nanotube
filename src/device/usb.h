@@ -30,6 +30,8 @@ typedef struct {
 	usb_endpoint_t out;
 	queue_t queue;
 	uint8_t mac_index;
+	uint24_t mtu;
+	void *read_data;
 	//todo: remove
 	bool halted;
 } netif_state_t;

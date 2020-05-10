@@ -26,11 +26,6 @@ const ip4_addr_t netmask = IPADDR4_INIT_BYTES(255,255,255,0);
 const ip4_addr_t gateway = IPADDR4_INIT_BYTES(192,168,0,1);
 const ip4_addr_t dns =     IPADDR4_INIT_BYTES(192,168,0,3);
 
-uint8_t eth_data[1518];
-
-//will either save space or look cool
-//uint8_t *eth_data = gfx_vram;
-
 void httpc_transfer_callback(void *arg, httpc_result_t httpc_result, u32_t rx_content_len, u32_t srv_res, err_t err) {
     custom_printf("HTTP callback: res %u, length %u, status %u, err %u\n", httpc_result, (uint24_t)rx_content_len, (uint24_t)srv_res, err);
 }

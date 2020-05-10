@@ -11,9 +11,22 @@
 #include "../lwIP/include/lwip/snmp.h"
 #include "../log.h"
 
-#define ETHERNET_MTU 1518
+/* For USB CDC Ethernet Control Model devices */
 
-extern uint8_t eth_data[ETHERNET_MTU];
+usb_error_t ecm_schedule_read(struct netif *netif) {
+    netif_state_t *state = netif->state;
+    if(state->read_data) {
+        mainlog("Tried to schedule a read while old pbuf not NULL\n");
+        return USB_ERROR_FAILED;
+    }
+    state->read_data = malloc(netif->mtu);
+    if(!state->read_data) {
+        mainlog("Failed to malloc input buffer\n");
+        state->halted = true;
+        return USB_ERROR_NO_MEMORY;
+    }
+    return usb_ScheduleTransfer(state->in, state->read_data, netif->mtu, ecm_read_callback, netif);
+}
 
 //todo: remove
 void clear_halt(struct netif *netif) {
@@ -22,7 +35,7 @@ void clear_halt(struct netif *netif) {
         usb_error_t error;
         error = usb_ClearEndpointHalt(state->in);
         if(error) custom_printf("Error %u clearing ep halt\n", error);
-        error = usb_ScheduleTransfer(state->in, eth_data, sizeof(eth_data), ecm_read_callback, netif);
+        error = ecm_schedule_read(netif);
         if(error) {
             custom_printf("Error %u rescheduling transfer\n", error);
         } else {
@@ -31,23 +44,21 @@ void clear_halt(struct netif *netif) {
     }
 }
 
-/* For USB CDC Ethernet Control Model devices */
-
 usb_error_t ecm_read_callback(usb_endpoint_t pEndpoint, usb_transfer_status_t status, size_t size, void *pVoid) {
-	struct pbuf *p;
 	struct netif *netif = pVoid;
 	netif_state_t *state = netif->state;
-	uint16_t type = ((struct eth_hdr*)eth_data)->type;
+	uint16_t type = ((struct eth_hdr*)state->read_data)->type;
 	//mainlog("got packet\n");
 	/* Ignore IPv6 and ARRIS router broadcasts */
 	if(type != PP_HTONS(ETHTYPE_IPV6) && type != 0x9988 && size) {
-		p = pbuf_alloc(PBUF_RAW, size, PBUF_POOL);
+        struct pbuf *p; /* This just crashes the compiler if merged onto one line ¯\_(ツ)_/¯ */
+        p = pbuf_alloc(PBUF_RAW, size, PBUF_POOL);
 		if(p != NULL) {
 
 			log_packet(eth_data, size, true);
 
 			/* Copy ethernet frame into pbuf */
-			pbuf_take(p, eth_data, size);
+			pbuf_take(p, state->read_data, size);
 
 			/* Put in a queue which is processed in main loop */
 			if(!queue_add(&state->queue, p)) {
@@ -57,6 +68,10 @@ usb_error_t ecm_read_callback(usb_endpoint_t pEndpoint, usb_transfer_status_t st
 			}
 		}
 	}
+
+    free(state->read_data);
+    state->read_data = NULL;
+
     if(status) {
         custom_printf("Transfer returned status %02x\n", status);
         if(status & USB_TRANSFER_FAILED) {
@@ -64,7 +79,7 @@ usb_error_t ecm_read_callback(usb_endpoint_t pEndpoint, usb_transfer_status_t st
             return USB_IGNORE;
         }
     }
-    usb_ScheduleTransfer(pEndpoint, eth_data, sizeof(eth_data), ecm_read_callback, netif);
+    ecm_schedule_read(netif);
     return USB_SUCCESS;
 }
 
@@ -146,7 +161,7 @@ err_t ecm_init_netif(struct netif *netif) {
 #if LWIP_IPV6
 	netif->output_ip6 = ethip6_output;
 #endif
-	netif->mtu = ETHERNET_MTU;
+	netif->mtu = state->mtu;
 	netif->flags = NETIF_FLAG_BROADCAST | NETIF_FLAG_ETHARP | NETIF_FLAG_ETHERNET | NETIF_FLAG_IGMP | NETIF_FLAG_MLD6;
 	memcpy(netif->hwaddr, mac, ETH_HWADDR_LEN);
 	netif->hwaddr_len = ETH_HWADDR_LEN;
@@ -159,7 +174,7 @@ err_t ecm_init_netif(struct netif *netif) {
 	ecm_set_packet_filer(state->dev, PACKET_TYPE_BROADCAST | PACKET_TYPE_DIRECTED);
 
 	state->halted = false;
-	usb_ScheduleTransfer(state->in, eth_data, sizeof(eth_data), ecm_read_callback, netif);
+    ecm_schedule_read(netif);
 
 	netif_init_common(netif);
 
